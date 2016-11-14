@@ -78,7 +78,7 @@ public class AuditEventReader {
 	// Group 2: name
 	// Group 3: nametype
 	//name is either a quoted string or an unquoted string in which case it is in hex format
-	private static final Pattern pattern_path = Pattern.compile("item=([0-9]*) name=(\".+\"|[a-zA-Z0-9]+) .*nametype=([a-zA-Z]*)");
+	private static final Pattern pattern_path = Pattern.compile("item=([0-9]*) name=(\".+\"|[a-zA-Z0-9]+) .*objtype=([a-zA-Z]*)");
 
 	// Group 1: eventid
 	private static final Pattern pattern_eventid = Pattern.compile("msg=audit\\([0-9\\.]+\\:([0-9]+)\\):");
@@ -292,7 +292,6 @@ public class AuditEventReader {
 	 * @throws Exception IOException
 	 */
 	public Map<String, String> readEventData() throws Exception{
-
 		if(reportingEnabled){
 			long currentTime = System.currentTimeMillis();
 			if((currentTime - lastReportedTime) >= reportEveryMs){
@@ -462,7 +461,6 @@ public class AuditEventReader {
 	 * @return map of key values for the argument record
 	 */
 	private Map<String, String> parseEventLine(String line) {
-
 		Map<String, String> auditRecordKeyValues = new HashMap<String, String>();
 
 		Matcher event_start_matcher = pattern_message_start.matcher(line);
@@ -498,6 +496,8 @@ public class AuditEventReader {
 				}
 			} else if (type.equals("PATH")) {
 				Matcher path_matcher = pattern_path.matcher(messageData);
+				Map<String, String> my_eventData = parseKeyValPairs(messageData);
+				
 				if (path_matcher.find()) {
 					String item = path_matcher.group(1);
 					String name = path_matcher.group(2);
@@ -514,6 +514,9 @@ public class AuditEventReader {
 					}
 					auditRecordKeyValues.put("path" + item, name);
 					auditRecordKeyValues.put("nametype" + item, nametype);
+					if (my_eventData.get("obj") != null){
+					    auditRecordKeyValues.put("obj", my_eventData.get("obj"));
+					}
 				}
 			} else if (type.equals("EXECVE")) {
 				Matcher key_value_matcher = pattern_key_value.matcher(messageData);

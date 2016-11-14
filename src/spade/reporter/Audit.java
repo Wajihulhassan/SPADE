@@ -187,7 +187,6 @@ public class Audit extends AbstractReporter {
 
 	@Override
 	public boolean launch(String arguments) {
-
 		String defaultConfigFilePath = Settings.getDefaultConfigFilePath(this.getClass());
 		try{
 			if(new File(defaultConfigFilePath).exists()){
@@ -438,7 +437,8 @@ public class Audit extends AbstractReporter {
 							}
 							while (!shutdown) {
 								try{
-									Map<String, String> eventData = auditEventReader.readEventData();
+								    Map<String, String> eventData = auditEventReader.readEventData();
+								    
 									if ((eventData != null)) {
 										finishEvent(eventData);
 									}
@@ -1653,15 +1653,20 @@ public class Audit extends AbstractReporter {
 		// - PATH with nametype CREATE (file operated on) or NORMAL (file operated on) or PARENT (parent of file operated on) or DELETE (file operated on) or UNKNOWN (only when syscall fails)
 		// - PATH with nametype CREATE or NORMAL or PARENT or DELETE or UNKNOWN
 		// - EOE
+	    // String string = eventData.toString();
+	    // //Wajih
+	    // logger.log(Level.INFO, string);
 
 		//three syscalls can come here: OPEN (for files and pipes), OPENAT (for files and pipes), CREAT (only for files)
-
 		Long flags = CommonFunctions.parseLong(eventData.get("a1"), 0L);
 
 		String pid = eventData.get("pid");
 		String cwd = eventData.get("cwd");
 		String fd = eventData.get("exit");
 		String time = eventData.get("time");
+
+		//String string = eventData.toString();
+		//logger.log(Level.INFO, string);
 
 		boolean isCreate = syscall == SYSCALL.CREATE || syscall == SYSCALL.CREAT; //TODO later on change only to CREAT only
 		String path = null;
@@ -2664,7 +2669,7 @@ public class Audit extends AbstractReporter {
 	 */
 	private Artifact putArtifact(Map<String, String> eventData, ArtifactIdentifier artifactIdentifier,
 			boolean updateVersion){
-		return putArtifact(eventData, artifactIdentifier, updateVersion, null);
+	    return putArtifact(eventData, artifactIdentifier, updateVersion, null);
 	}
 
 	/**
@@ -2726,6 +2731,9 @@ public class Audit extends AbstractReporter {
 		boolean vertexNotSeenBefore = updateVersion || artifactProperties.isVersionUninitialized(); //do this before getVersion because it updates it based on updateVersion flag
 
 		artifact.addAnnotation("version", String.valueOf(artifactProperties.getVersion(updateVersion)));
+		if(eventData.get("obj") != null){
+		    artifact.addAnnotation("obj",eventData.get("obj"));
+		}
 
 		if(!MemoryIdentifier.class.equals(artifactIdentifierClass)){ //epoch for everything except memory
 			artifact.addAnnotation("epoch", String.valueOf(artifactProperties.getEpoch()));
@@ -3255,12 +3263,15 @@ public class Audit extends AbstractReporter {
 			return null;
 		}
 		return createProcessVertex(annotations.get("pid"), annotations.get("ppid"), 
-				//if data from audit log then 'name' is 'comm' otherwise audit annotation key is 'name'
-				annotations.get("name") == null ? annotations.get("comm") : annotations.get("name"), 
-						annotations.get("commandline"),
-						annotations.get("cwd"), annotations.get("uid"), annotations.get("euid"), annotations.get("suid"), annotations.get("fsuid"), 
-						annotations.get("gid"), annotations.get("egid"), annotations.get("sgid"), annotations.get("fsgid"), annotations.get(SOURCE), 
-						annotations.get("start time"), annotations.get("unit"), annotations.get("iteration"), annotations.get("count"));
+					   //if data from audit log then 'name' is 'comm' otherwise audit annotation key is 'name'
+					   annotations.get("name") == null ? annotations.get("comm") : annotations.get("name"),
+					   annotations.get("commandline"),
+					   annotations.get("cwd"), annotations.get("uid"), annotations.get("euid"), 
+					   annotations.get("suid"), annotations.get("fsuid"), 
+					   annotations.get("gid"), annotations.get("egid"), annotations.get("sgid"), 
+					   annotations.get("fsgid"), annotations.get(SOURCE), 
+					   annotations.get("start time"), annotations.get("unit"), 
+					   annotations.get("iteration"), annotations.get("count"), annotations.get("subj"));
 	}
 
 	/**
@@ -3291,7 +3302,7 @@ public class Audit extends AbstractReporter {
 	private Process createProcessVertex(String pid, String ppid, String name, String commandline, String cwd, 
 			String uid, String euid, String suid, String fsuid, 
 			String gid, String egid, String sgid, String fsgid,
-			String source, String startTime, String unit, String iteration, String count){
+					    String source, String startTime, String unit, String iteration, String count, String subj){
 
 		Process process = new Process();
 		process.addAnnotation("pid", pid);
@@ -3346,7 +3357,9 @@ public class Audit extends AbstractReporter {
 				}
 			}
 		}
-
+		if(subj != null){
+		    process.addAnnotation("subj",subj);
+		}
 		return process;
 	}
 
@@ -3418,7 +3431,7 @@ public class Audit extends AbstractReporter {
 				Process newProcess = createProcessVertex(pid, ppid, name, null, null, 
 						uidTokens[1], uidTokens[2], uidTokens[3], uidTokens[4], 
 						gidTokens[1], gidTokens[2], gidTokens[3], gidTokens[4], 
-						PROC_FS, Long.toString(startTime), CREATE_BEEP_UNITS ? "0" : null, null, null);
+									 PROC_FS, Long.toString(startTime), CREATE_BEEP_UNITS ? "0" : null, null, null,null);
 
 				// newProcess.addAnnotation("starttime_unix", stime);
 				// newProcess.addAnnotation("starttime_simple", stime_readable);
@@ -3618,11 +3631,12 @@ public class Audit extends AbstractReporter {
 		if(process == null){
 			return null;
 		}
+		
 		return createProcessVertex(process.getAnnotation("pid"), process.getAnnotation("ppid"), process.getAnnotation("name"), 
 				process.getAnnotation("commandline"), process.getAnnotation("cwd"), 
 				process.getAnnotation("uid"), process.getAnnotation("euid"), process.getAnnotation("suid"), process.getAnnotation("fsuid"), 
 				process.getAnnotation("gid"), process.getAnnotation("egid"), process.getAnnotation("sgid"), process.getAnnotation("fsgid"), 
-				BEEP, startTime, unitId, iteration, count);
+					   BEEP, startTime, unitId, iteration, count,null);
 	}
 
 }
