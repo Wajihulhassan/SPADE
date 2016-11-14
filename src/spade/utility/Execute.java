@@ -78,5 +78,54 @@ public class Execute {
 		
 		return lines;
 	}
+
+	public static List<String> getOutputFromList(final String[] command) throws Exception{
+		
+		Process process = Runtime.getRuntime().exec(command);
+		
+		final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		final BufferedReader stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+		final List<String> lines = new ArrayList<String>();
+		
+		Thread stdoutThread = new Thread(new Runnable(){
+			public void run(){
+				try{
+					String line = null;
+					while((line = stdoutReader.readLine()) != null){
+						lines.add("[STDOUT]\t" + line);
+					}
+				}catch(Exception e){
+					logger.log(Level.WARNING, "Error reading STDOUT for command: " +command, e);
+				}
+			}
+		});
+		
+		Thread stderrThread = new Thread(new Runnable(){
+			public void run(){
+				try{
+					String line = null;
+					while((line = stderrReader.readLine()) != null){
+						lines.add("[STDERR]\t" + line);
+					}
+				}catch(Exception e){
+					logger.log(Level.WARNING, "Error reading STDERR for command: " +command, e);
+				}
+			}
+		});
+		
+		stdoutThread.start();
+		stderrThread.start();
+		
+		process.waitFor();
+		
+		stdoutThread.join();
+		stderrThread.join();
+		
+		stderrReader.close();
+		stdoutReader.close();
+		
+		return lines;
+	}
+    
 	
 }

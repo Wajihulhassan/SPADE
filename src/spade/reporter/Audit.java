@@ -121,6 +121,9 @@ public class Audit extends AbstractReporter {
 	private final Map<String, LinkedList<Process>> processUnitStack = new HashMap<String, LinkedList<Process>>();
 	// Process version map. Versioning based on units. pid -> unitid -> iterationcount
 	private final Map<String, Map<String, Long>> iterationNumber = new HashMap<String, Map<String, Long>>();
+    // For docker map SELINUX label to docker container ID
+    private final Map<String, String> docker_obj_map = new HashMap<String ,String>();
+    private final Map<String, String> docker_subj_map = new HashMap<String ,String>();
 
 	private final DescriptorManager descriptors = new DescriptorManager();
 
@@ -162,6 +165,8 @@ public class Audit extends AbstractReporter {
 
 	//  To toggle monitoring of mmap, mmap2 and mprotect syscalls
 	private boolean USE_MEMORY_SYSCALLS = true;
+        // To separate docker container provenance
+        private boolean USE_DOCKER = false;
 
 	private String AUDITCTL_SYSCALL_SUCCESS_FLAG = "1";
 
@@ -182,6 +187,7 @@ public class Audit extends AbstractReporter {
 
 	//Reporting variables
 	private boolean reportingEnabled = false;
+        
 	private long reportEveryMs;
 	private long lastReportedTime;
 
@@ -271,6 +277,10 @@ public class Audit extends AbstractReporter {
 		if("false".equals(args.get("control"))){
 			CONTROL = false;
 		}
+		if("true".equals(args.get("docker"))){
+       		        USE_DOCKER = true;
+		}
+
 		// End of experimental arguments
 
 		//        initialize cache data structures
@@ -278,7 +288,45 @@ public class Audit extends AbstractReporter {
 		if(!initCacheMaps()){
 			return false;
 		}
+		
+		
+		if(USE_DOCKER){
+		    logger.log(Level.INFO, "Using DOCKER true");
+		    try{
+			List<String> lines_obj = Execute.getOutputFromList(new String[] { 
+				"/bin/sh",
+				"-c","docker ps -q | awk \'{ print $1}\' | xargs docker inspect -f \'{{ .MountLabel }} {{ .Config.Hostname }}\'"});
+			
+			    //List<String> lines_obj = Execute.getOutputFromList("docker ps -q");
 
+			for(String line: lines_obj) {
+			    logger.log(Level.INFO, line);
+			    String splited[] = line.split("\\s+");
+			    logger.log(Level.INFO, splited[1].trim());
+			    if (splited.length >= 3)
+				docker_obj_map.put(splited[1].trim(), splited[2].trim());
+			}
+			
+			List<String> lines_subj = Execute.getOutputFromList(new String[] { 
+				"/bin/sh",
+				"-c","docker ps -q | awk \'{ print $1}\' | xargs docker inspect -f \'{{ .ProcessLabel }} {{ .Config.Hostname }}\'"});
+			for(String line: lines_subj ) {
+			    logger.log(Level.INFO, line);
+			    String splited[] = line.split("\\s+");
+			    logger.log(Level.INFO, splited[1].trim());
+			    if (splited.length >= 3)
+				docker_subj_map.put(splited[1].trim(), splited[2].trim());
+			}
+			String li1 = docker_subj_map.toString();
+			String li2 = docker_obj_map.toString();
+			//Wajih
+			logger.log(Level.INFO, li1);
+			logger.log(Level.INFO, li2);
+		    }catch(Exception e){
+			logger.log(Level.WARNING, "Failed to get docker mappings", e);
+		    }
+		}
+	
 		// Get system boot time from /proc/stat. This is later used to determine
 		// the start time for processes.
 		try {
@@ -2731,8 +2779,11 @@ public class Audit extends AbstractReporter {
 		boolean vertexNotSeenBefore = updateVersion || artifactProperties.isVersionUninitialized(); //do this before getVersion because it updates it based on updateVersion flag
 
 		artifact.addAnnotation("version", String.valueOf(artifactProperties.getVersion(updateVersion)));
-		if(eventData.get("obj") != null){
-		    artifact.addAnnotation("obj",eventData.get("obj"));
+		if(eventData.get("obj") != null ){
+		    if (docker_obj_map.get(eventData.get("obj")) != null)
+			artifact.addAnnotation("Cont_ID",docker_obj_map.get(eventData.get("obj")));
+		    else
+			artifact.addAnnotation("Cont_ID",eventData.get("obj"));
 		}
 
 		if(!MemoryIdentifier.class.equals(artifactIdentifierClass)){ //epoch for everything except memory
@@ -3358,7 +3409,10 @@ public class Audit extends AbstractReporter {
 			}
 		}
 		if(subj != null){
-		    process.addAnnotation("subj",subj);
+		    if (docker_subj_map.get(subj) != null)
+			process.addAnnotation("Cont_ID",docker_subj_map.get(subj));
+		    else
+			process.addAnnotation("Cont_ID",subj);
 		}
 		return process;
 	}
