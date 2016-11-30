@@ -2783,7 +2783,8 @@ public class Audit extends AbstractReporter {
 		    if (docker_obj_map.get(eventData.get("obj")) != null)
 			artifact.addAnnotation("Cont_ID",docker_obj_map.get(eventData.get("obj")));
 		    else
-			artifact.addAnnotation("Cont_ID",eventData.get("obj"));
+			//artifact.addAnnotation("Cont_ID",eventData.get("obj"));
+			artifact.addAnnotation("Cont_ID","HOST");
 		}
 
 		if(!MemoryIdentifier.class.equals(artifactIdentifierClass)){ //epoch for everything except memory
@@ -3412,7 +3413,8 @@ public class Audit extends AbstractReporter {
 		    if (docker_subj_map.get(subj) != null)
 			process.addAnnotation("Cont_ID",docker_subj_map.get(subj));
 		    else
-			process.addAnnotation("Cont_ID",subj);
+			//process.addAnnotation("Cont_ID",subj);
+			process.addAnnotation("Cont_ID","HOST");
 		}
 		return process;
 	}
