@@ -107,6 +107,8 @@ public class Kernel {
      * currently added modules).
      */
     private static final String CONFIG_FILE = CONFIG_PATH + FILE_SEPARATOR + "spade.config";
+    private static final String REPORTER_RM_STRING = "remove reporter Audit outputLog=/tmp/audit.log memorySyscalls=false docker=true control=false";
+    private static final String STORAGE_RM_SRING = "remove storage Graphviz /tmp/provenance.dot";
     /**
      * Paths to key stores.
      */
@@ -1286,8 +1288,11 @@ public class Kernel {
         // Save current configuration.
         configCommand("config save " + CONFIG_FILE, NullStream.out);
         // Shut down all reporters.
+	removeCommand(REPORTER_RM_STRING, NullStream.out);
         for (AbstractReporter reporter : reporters) {
             reporter.shutdown();
+	    //removereporters.add(reporter);
+	    logger.log(Level.INFO, "Shutting down reporter: FINAL CALL");
         }
         // Wait for main thread to consume all provenance data.
         while (!reporters.isEmpty()) {
@@ -1299,18 +1304,30 @@ public class Kernel {
                 }
             }
             try {
-                Thread.sleep(MAIN_THREAD_SLEEP_DELAY);
+                Thread.sleep(REMOVE_WAIT_DELAY);
             } catch (InterruptedException ex) {
                 logger.log(Level.WARNING, null, ex);
             }
         }
         
+	try {
+	    Thread.sleep(REMOVE_WAIT_DELAY);
+	} catch (InterruptedException ex) {
+	    logger.log(Level.WARNING, null, ex);
+	}
+
         // Shut down filters.
         for (int i = 0; i < filters.size() - 1; i++) {
             filters.get(i).shutdown();
         }
         // Shut down storages.
+	removeCommand(STORAGE_RM_SRING, NullStream.out);
         for (AbstractStorage storage : storages) {
+	    try {
+                Thread.sleep(REMOVE_WAIT_DELAY);
+            } catch (InterruptedException ex) {
+                logger.log(Level.WARNING, null, ex);
+            }
             storage.shutdown();
         }
         
