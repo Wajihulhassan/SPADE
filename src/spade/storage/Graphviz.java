@@ -27,7 +27,8 @@ import org.apache.commons.codec.binary.Hex;
 import spade.core.AbstractEdge;
 import spade.core.AbstractStorage;
 import spade.core.AbstractVertex;
-
+import spade.utility.Execute;
+import java.util.List;
 /**
  * A storage implementation that writes data to a DOT file.
  *
@@ -84,6 +85,9 @@ public class Graphviz extends AbstractStorage {
                 if (key == null || value == null) {
                     continue;
                 }
+		if (key == "epoch" || key == "type" || key == "source" || key == "egid" || key == "euid"){
+		    continue;
+		}
                 annotationString.append(key);
                 annotationString.append(":");
                 annotationString.append(value);
@@ -99,6 +103,7 @@ public class Graphviz extends AbstractStorage {
             } else if (type.equalsIgnoreCase("Process") || type.equalsIgnoreCase("Activity") || type.equalsIgnoreCase("Subject")) {
                 shape = "box";
                 color = "lightsteelblue1";
+		//Logger.getLogger(Graphviz.class.getName()).log(Level.INFO, "PUTTING process vertex");
             } else if (type.equalsIgnoreCase("Artifact") || type.equalsIgnoreCase("Entity") || type.equalsIgnoreCase("Object")) {
                 shape = "ellipse";
                 color = "khaki1";
@@ -117,7 +122,7 @@ public class Graphviz extends AbstractStorage {
             }
 
             String key = Hex.encodeHexString(incomingVertex.bigHashCode());
-            outputFile.write("\"" + key + "\" [label=\"" + vertexString.replace("\"", "'") + "\" shape=\"" + shape + "\" fillcolor=\"" + color + "\"];\n");
+            outputFile.write("\"" + key + "\" [label=\"\\n" + vertexString.replace("\"", "'") + "\" shape=\"" + shape + "\" fillcolor=\"" + color + "\"];\n");
             checkTransactions();
             return true;
         } catch (Exception exception) {
@@ -136,6 +141,9 @@ public class Graphviz extends AbstractStorage {
                 if (key == null || value == null) {
                     continue;
                 }
+		if (key == "source" || key == "time" || key == "event id"){
+		    continue;
+		}
                 annotationString.append(key);
                 annotationString.append(":");
                 annotationString.append(value);
@@ -184,6 +192,9 @@ public class Graphviz extends AbstractStorage {
         try {
             outputFile.write("}\n");
             outputFile.close();
+	    String cmd = "/usr/local/bin/python3 draw_containers.py " + filePath + " /tmp/output.dot";
+	    Logger.getLogger(Graphviz.class.getName()).log(Level.INFO, cmd);
+	    List<String> cmdOutput = Execute.getOutput(cmd);
             return true;
         } catch (Exception exception) {
             Logger.getLogger(Graphviz.class.getName()).log(Level.SEVERE, null, exception);
