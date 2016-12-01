@@ -28,6 +28,7 @@ for line in lines_without_edges:
     if 'Cont_ID' in line:
         tokens = line.split('\\n')
         token = [x for x in tokens if x.startswith('Cont_ID')]
+        print("done")
         spl = token[0].split(":")
         nodes_map[spl[1]].append(line)
 
@@ -37,7 +38,7 @@ with open(sys.argv[2], 'w') as fil:
         color = [round(random.random(), 5) for x in range(0,3)]
         r = lambda: random.randint(0,255)
         hex_str = '#%02X%02X%02X' % (r(),r(),r())
-        subgraph_start = "subgraph cluster_%s { label=\"%s\" color=\"%s86\" style=\"filled,dashed\" ;\n" % (str(key), str(key),hex_str)
+        subgraph_start = "subgraph cluster_%s { label=\"UUID = %s\" color=\"%s86\" style=\"filled,dashed\" ;\n" % (str(key), str(key),hex_str)
         
         fil.write('\n' + subgraph_start + '\n')
         for l in val:
