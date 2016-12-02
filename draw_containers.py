@@ -3,8 +3,12 @@
 import sys
 import random
 from collections import defaultdict
-if len(sys.argv) != 3:
+flag = False
+if len(sys.argv) < 3:
     print("provide more arguments")
+
+if len(sys.argv) == 4:
+    flag = True
 
 lines = []
 lines_with_edges = []
@@ -24,11 +28,19 @@ with open(sys.argv[1],'r') as fil:
         else:
             lines_without_edges.append(l)
 
+if flag:
+    with open(sys.argv[3],'r') as fil:
+        for l in fil:
+            if '->' in l:
+                lines_with_edges.append(l)
+            else:
+                lines_without_edges.append(l)
+
+
 for line in lines_without_edges:
     if 'Cont_ID' in line:
         tokens = line.split('\\n')
         token = [x for x in tokens if x.startswith('Cont_ID')]
-        print("done")
         spl = token[0].split(":")
         nodes_map[spl[1]].append(line)
 
