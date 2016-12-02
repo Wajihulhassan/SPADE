@@ -558,7 +558,7 @@ public class Audit extends AbstractReporter {
 						shutdown = true;
 						return false;
 					}else{
-						uidField = "-F uid!=" + uid + " -F uid!=997 ";
+						uidField = "-F uid!=" + uid + " -F uid!=997 -F uid!=991 -F uid!=81 ";
 					}
 
 					//Find pids to ignore
