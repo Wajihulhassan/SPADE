@@ -13,6 +13,7 @@ if len(sys.argv) == 4:
 lines = []
 lines_with_edges = []
 lines_without_edges = []
+lines_without_contid = []
 nodes_map = defaultdict(list)
 
 start = """digraph spade2dot {
@@ -43,9 +44,13 @@ for line in lines_without_edges:
         token = [x for x in tokens if x.startswith('Cont_ID')]
         spl = token[0].split(":")
         nodes_map[spl[1]].append(line)
+    elif 'subtype:network' in line:
+        lines_without_contid.append(line)
 
 with open(sys.argv[2], 'w') as fil:
     fil.write(start)
+    for l in lines_without_contid:
+        fil.write(l)
     for key, val in nodes_map.items():
         color = [round(random.random(), 5) for x in range(0,3)]
         r = lambda: random.randint(0,255)
