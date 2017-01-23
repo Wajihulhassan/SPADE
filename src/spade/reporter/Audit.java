@@ -319,9 +319,9 @@ public class Audit extends AbstractReporter {
 			}
 			String li1 = docker_subj_map.toString();
 			String li2 = docker_obj_map.toString();
-			//Wajih
-			logger.log(Level.INFO, li1);
-			logger.log(Level.INFO, li2);
+			// //Wajih
+			// logger.log(Level.INFO, li1);
+			// logger.log(Level.INFO, li2);
 		    }catch(Exception e){
 			logger.log(Level.WARNING, "Failed to get docker mappings", e);
 		    }
@@ -1576,6 +1576,9 @@ public class Audit extends AbstractReporter {
 		 * 3) add the Used edges from the newly created vertex in step 1 to the libraries used when execve
 		 *  was done
 		 */
+	    // String string = eventData.toString();
+	    // //Wajih
+	    // logger.log(Level.INFO, string);
 
 		String pid = eventData.get("pid");
 		String time = eventData.get("time");
@@ -1624,6 +1627,7 @@ public class Audit extends AbstractReporter {
 
 		//add used edge to the paths in the event data. get the number of paths using the 'items' key and then iterate
 		String cwd = eventData.get("cwd");
+		String obj_label = eventData.get("obj");
 		Long totalPaths = CommonFunctions.parseLong(eventData.get("items"), 0L);
 		for(int pathNumber = 0; pathNumber < totalPaths; pathNumber++){
 			String path = eventData.get("path"+pathNumber);
@@ -1631,8 +1635,13 @@ public class Audit extends AbstractReporter {
 			if(path == null){
 				log(Level.INFO, "Missing PATH or CWD record", null, time, eventData.get("eventid"), SYSCALL.EXECVE);
 				continue;
-			}        	
-			ArtifactIdentifier fileIdentifier = new FileIdentifier(path);
+			}
+			ArtifactIdentifier fileIdentifier;
+			if (obj_label != null){
+			    fileIdentifier = new FileIdentifier(path, obj_label);
+			}else{
+			    fileIdentifier = new FileIdentifier(path);
+			}
 			Artifact usedArtifact = putArtifact(eventData, fileIdentifier, false);
 			Used usedEdge = new Used(newProcess, usedArtifact);
 			putEdge(usedEdge, getOperation(SYSCALL.LOAD), time, eventData.get("eventid"), DEV_AUDIT);
@@ -1712,7 +1721,7 @@ public class Audit extends AbstractReporter {
 		String cwd = eventData.get("cwd");
 		String fd = eventData.get("exit");
 		String time = eventData.get("time");
-
+		String obj_label = eventData.get("obj");
 		//String string = eventData.toString();
 		//logger.log(Level.INFO, string);
 
@@ -1740,14 +1749,18 @@ public class Audit extends AbstractReporter {
 
 		Process process = putProcess(eventData);
 
-		ArtifactIdentifier artifactIdentifier = getValidArtifactIdentifierForPath(path);
+		ArtifactIdentifier artifactIdentifier = getValidArtifactIdentifierForPath(path, obj_label);
 
 		AbstractEdge edge = null;
 
 		if(isCreate){
 
 			if(!FileIdentifier.class.equals(artifactIdentifier.getClass())){
+			    if (obj_label != null){
+				artifactIdentifier = new FileIdentifier(path,obj_label); //can only create a file using open
+			    }else{
 				artifactIdentifier = new FileIdentifier(path); //can only create a file using open
+			    }
 			}
 
 			//set new epoch
@@ -1758,8 +1771,12 @@ public class Audit extends AbstractReporter {
 		}
 
 		if((!FileIdentifier.class.equals(artifactIdentifier.getClass()) && !artifactIdentifier.getClass().equals(NamedPipeIdentifier.class))){ //not a file and not a named pipe
-			//make it a file identifier
-			artifactIdentifier = new FileIdentifier(path);
+		    //make it a file identifier
+		    if (obj_label != null){
+			artifactIdentifier = new FileIdentifier(path,obj_label); //can only create a file using open
+		    }else{
+			artifactIdentifier = new FileIdentifier(path); //can only create a file using open
+		    }
 		}
 
 		boolean openedForRead = false;
@@ -2793,6 +2810,9 @@ public class Audit extends AbstractReporter {
 
 		if(vertexNotSeenBefore){//not seen because of either it has been updated or it is the first time it is seen
 			putVertex(artifact);
+		}else{
+		    // //Wajih
+		    // logger.log(Level.INFO, "SEEN before");
 		}
 
 		//always at the end after the vertex has been added
@@ -3126,8 +3146,16 @@ public class Audit extends AbstractReporter {
 	 * @param path path to check against
 	 * @return the artifact identifier with the matched path or a file artifact identifier if path didn't match any artifact identifier
 	 */
-	private ArtifactIdentifier getValidArtifactIdentifierForPath(String path){
-		FileIdentifier fileIdentifier = new FileIdentifier(path);
+    private ArtifactIdentifier getValidArtifactIdentifierForPath(String path){
+	return getValidArtifactIdentifierForPath(path,null);
+    }
+    private ArtifactIdentifier getValidArtifactIdentifierForPath(String path, String label){
+	FileIdentifier fileIdentifier;
+	if (label != null){
+	    fileIdentifier = new FileIdentifier(path,label);
+	}else{
+	    fileIdentifier = new FileIdentifier(path);
+	}
 		NamedPipeIdentifier namedPipeIdentifier = new NamedPipeIdentifier(path);
 		UnixSocketIdentifier unixSocketIdentifier = new UnixSocketIdentifier(path);
 		//NOTE: get them directly without using the utility function. done to get null properties if not initialized yet.

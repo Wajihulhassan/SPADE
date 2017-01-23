@@ -85,7 +85,7 @@ public class Graphviz extends AbstractStorage {
                 if (key == null || value == null) {
                     continue;
                 }
-		if (key == "epoch" || key == "type" || key == "source" || key == "egid" || key == "euid"){
+		if (key == "epoch" || key == "source" || key == "egid" || key == "euid" || key == "start time"){
 		    continue;
 		}
                 annotationString.append(key);
@@ -141,7 +141,7 @@ public class Graphviz extends AbstractStorage {
                 if (key == null || value == null) {
                     continue;
                 }
-		if (key == "source" || key == "time" || key == "event id"){
+		if (key == "event id" || key == "time" || key == "source"){
 		    continue;
 		}
                 annotationString.append(key);

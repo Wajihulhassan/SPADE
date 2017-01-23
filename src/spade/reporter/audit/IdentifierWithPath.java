@@ -31,12 +31,20 @@ import java.util.Map;
 public abstract class IdentifierWithPath extends ArtifactIdentifier{
 	
 	private String path;
+    private String label;
 	
 	public IdentifierWithPath(String path){
 		path = path.replace("//", "/");
 		this.path = path;
+		this.label = null;
 	}
 	
+    public IdentifierWithPath(String path, String label){
+		path = path.replace("//", "/");
+		this.path = path;
+		this.label = label;
+	}
+
 	@Override
 	public Map<String, String> getAnnotationsMap(){
 		Map<String, String> annotations = new HashMap<String, String>();
@@ -54,7 +62,7 @@ public abstract class IdentifierWithPath extends ArtifactIdentifier{
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((path == null) ? 0 : path.hashCode());
+		result = prime * result + ((path == null) ? 0 : path.hashCode()) + ((label == null) ? 0 : label.hashCode());
 		return result;
 	}
 
@@ -72,6 +80,13 @@ public abstract class IdentifierWithPath extends ArtifactIdentifier{
 				return false;
 		} else if (!path.equals(other.path))
 			return false;
+
+		if (label == null) {
+			if (other.label != null)
+				return false;
+		} else if (!label.equals(other.label))
+			return false;
+
 		return true;
 	}
 }

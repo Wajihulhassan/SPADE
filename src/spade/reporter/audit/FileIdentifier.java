@@ -26,6 +26,10 @@ public class FileIdentifier extends IdentifierWithPath{
 		super(path);
 	}
 	
+    public FileIdentifier(String path, String label){
+	super(path, label);
+    }
+
 	public String getSubtype(){
 		return SUBTYPE_FILE;
 	}
