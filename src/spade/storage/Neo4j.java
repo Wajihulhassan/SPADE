@@ -93,8 +93,8 @@ public class Neo4j extends AbstractStorage {
     static final Logger logger = Logger.getLogger(Neo4j.class.getName());
     private final String NEO_CONFIG_FILE = "cfg/neo4j.properties";
 
-    private enum MyRelationshipTypes implements RelationshipType { EDGE }
-    private enum MyNodeTypes implements Label { VERTEX }
+    private enum MyRelationshipTypes implements RelationshipType { EDGE,wasGeneratedBy, used, wasControlledBy, wasTriggeredBy, wasDerivedFrom }
+    private enum MyNodeTypes implements Label { Process, Artifact, Agent }
     private String neo4jDatabaseDirectoryPath = null;
 
   	public final String HASHCODE_LABEL = "hashCode";
@@ -348,18 +348,25 @@ public class Neo4j extends AbstractStorage {
         }
         vertexCount++;
         reportProgress();
-
-        Node newVertex = graphDb.createNode(MyNodeTypes.VERTEX);
+        Node newVertex = graphDb.createNode();
         for (Map.Entry<String, String> currentEntry : incomingVertex.getAnnotations().entrySet()) {
           String key = currentEntry.getKey();
           String value = currentEntry.getValue();
           if (key.equalsIgnoreCase(ID_STRING)) {
             continue;
           }
+	  if (key.equalsIgnoreCase("type") && value.equalsIgnoreCase("Process") ){
+	      newVertex.addLabel(MyNodeTypes.Process);
+	  }
+	  else if (key.equalsIgnoreCase("type") && value.equalsIgnoreCase("Agent")){
+	      newVertex.addLabel(MyNodeTypes.Agent);
+	  }
+	  else if (key.equalsIgnoreCase("type") && value.equalsIgnoreCase("Artifact")){
+	      newVertex.addLabel(MyNodeTypes.Artifact);
+	  }
           newVertex.setProperty(key, value);
           vertexIndex.add(newVertex, key, value);
         }
-
         newVertex.setProperty(HASHCODE_LABEL, bigHashCode);
         vertexIndex.add(newVertex, HASHCODE_LABEL, bigHashCode);
         newVertex.setProperty(ID_STRING, newVertex.getId());
@@ -423,8 +430,20 @@ public class Neo4j extends AbstractStorage {
 
             edgeCount++;
             reportProgress();
+	    Relationship newEdge;
+	    if ( incomingEdge.getAnnotations().get("type").equalsIgnoreCase("wasGeneratedBy"))
+		 newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.wasGeneratedBy);
+	    else if ( incomingEdge.getAnnotations().get("type").equalsIgnoreCase("used"))
+		 newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.used);
+	    else if ( incomingEdge.getAnnotations().get("type").equalsIgnoreCase("wasControlledBy"))
+		 newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.wasControlledBy);
+	    else if ( incomingEdge.getAnnotations().get("type").equalsIgnoreCase("wasTriggeredBy"))
+		 newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.wasTriggeredBy);
+	    else if ( incomingEdge.getAnnotations().get("type").equalsIgnoreCase("wasDerivedFrom"))
+		 newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.wasDerivedFrom);
+	    else
+		newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.EDGE);
 
-            Relationship newEdge = srcNode.createRelationshipTo(dstNode, MyRelationshipTypes.EDGE);
             for (Map.Entry<String, String> currentEntry : incomingEdge.getAnnotations().entrySet()) {
                 String key = currentEntry.getKey();
                 String value = currentEntry.getValue();
