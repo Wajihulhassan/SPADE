@@ -355,6 +355,9 @@ public class Neo4j extends AbstractStorage {
           if (key.equalsIgnoreCase(ID_STRING)) {
             continue;
           }
+	  if (key.equalsIgnoreCase("epoch") || key.equalsIgnoreCase("euid") || key.equalsIgnoreCase("guid") || key.equalsIgnoreCase("egid")|| key.equalsIgnoreCase("gid") || key.equalsIgnoreCase("source") || key.equalsIgnoreCase("ppid") || key.equalsIgnoreCase("start time") || key.equalsIgnoreCase("version")  || key.equalsIgnoreCase("subtype")  ){
+	      continue;
+	  } 
 	  if (key.equalsIgnoreCase("type") && value.equalsIgnoreCase("Process") ){
 	      newVertex.addLabel(MyNodeTypes.Process);
 	  }
