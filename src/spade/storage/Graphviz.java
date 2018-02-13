@@ -85,15 +85,16 @@ public class Graphviz extends AbstractStorage {
                 if (key == null || value == null) {
                     continue;
                 }
-		if (key == "epoch" || key == "source" || key == "egid" || key == "euid" || key == "start time"){
+		if (key == "epoch" || key == "source" || key == "egid" || key == "euid" || key == "start time" || key == "commandline" || key == "gid" || key == "cwd" || key == "key" || key == "subtype" || key == "version"){
 		    continue;
 		}
+		
                 annotationString.append(key);
                 annotationString.append(":");
                 annotationString.append(value);
                 annotationString.append("\\n");
             }
-            String vertexString = annotationString.substring(0, annotationString.length() - 2);
+            String vertexString = annotationString.substring(0, annotationString.length());
             String shape = "box";
             String color = "white";
             String type = incomingVertex.getAnnotation("type");

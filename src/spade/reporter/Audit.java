@@ -486,7 +486,7 @@ public class Audit extends AbstractReporter {
 							while (!shutdown) {
 								try{
 								    Map<String, String> eventData = auditEventReader.readEventData();
-								    
+								    logger.log(Level.INFO, "wajih found event");
 									if ((eventData != null)) {
 										finishEvent(eventData);
 									}
@@ -559,6 +559,7 @@ public class Audit extends AbstractReporter {
 						return false;
 					}else{
 						uidField = "-F uid!=" + uid + " -F uid!=997 -F uid!=991 -F uid!=81 ";
+						// uidField = " -F uid!=997 -F uid!=991 -F uid!=81 ";
 					}
 
 					//Find pids to ignore
@@ -619,11 +620,12 @@ public class Audit extends AbstractReporter {
 						auditRuleWithSuccess += "-S unlink -S unlinkat ";
 						auditRuleWithSuccess += "-S link -S linkat -S symlink -S symlinkat ";
 						auditRuleWithSuccess += "-S clone -S fork -S vfork -S execve ";
-						auditRuleWithSuccess += "-S open -S close -S creat -S openat -S mknodat -S mknod ";
+						// auditRuleWithSuccess += "-S write -S lseek -S writev -S pwritev -S open ";
+						auditRuleWithSuccess += "-S write -S lseek -S writev -S pwritev -S open -S close -S creat -S openat -S mknodat -S mknod ";
 						auditRuleWithSuccess += "-S dup -S dup2 -S dup3 ";
 						auditRuleWithSuccess += "-S bind -S accept -S accept4 -S connect ";
 						auditRuleWithSuccess += "-S rename -S renameat ";
-						auditRuleWithSuccess += "-S setuid -S setreuid -S setresuid ";
+						// auditRuleWithSuccess += "-S setuid -S setreuid -S setresuid ";
 						auditRuleWithSuccess += "-S chmod -S fchmod -S fchmodat ";
 						auditRuleWithSuccess += "-S pipe -S pipe2 ";
 						auditRuleWithSuccess += "-S truncate -S ftruncate ";

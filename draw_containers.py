@@ -3,6 +3,7 @@
 import sys
 import random
 from collections import defaultdict
+
 flag = False
 get_cont = False
 if len(sys.argv) < 3:
@@ -36,6 +37,17 @@ for line in lines_without_edges:
         tokens = line.split('\\n')
         token = [x for x in tokens if x.startswith('Cont_ID')]
         spl = token[0].split(":")
+        # hack
+        if "/logs/userlogs" in line:
+            continue
+        if "/etc/ld.so" in line:
+            continue
+        if ".jar" in line:
+            continue
+        if "/tmp/hadoop-root/nm-local-dir" in line:
+            continue
+        if "/usr/lib64/" in line:
+            continue
         nodes_map[spl[1]].append(line)
     elif 'subtype:network' in line:
         lines_without_contid.append(line)
@@ -68,7 +80,7 @@ with open(sys.argv[2], 'w') as fil:
         node2 = tokens[2]
         if get_cont:
             list_nodes = cont_map[cont_id]
-            if node1 in list_nodes or node2 in list_nodes:
+            if node1 in list_nodes and node2 in list_nodes:
                 fil.write(l)
         else:
             fil.write(l)
